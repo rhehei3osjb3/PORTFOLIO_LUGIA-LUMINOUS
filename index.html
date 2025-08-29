@@ -1,339 +1,660 @@
-import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Play, Github } from "lucide-react";
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Portfolio — A ordinary scripter</title>
 
-// Advanced single-file React component (Tailwind + Framer Motion)
-// Drop this file into a React project that has TailwindCSS configured.
-// Recommended deps: framer-motion, lucide-react
+  <!-- Google fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
+  <style>
+    :root{
+      --bg-0: #050308;
+      --bg-1: #0b1020;
+      --neon-c1: #7ef0ff;
+      --neon-c2: #c37bff;
+      --neon-c3: #5bf07a;
+      --glass: rgba(255,255,255,0.04);
+      --muted: rgba(255,255,255,0.65);
+      --accent: linear-gradient(90deg,var(--neon-c2),var(--neon-c1),var(--neon-c3));
+      --glass-2: rgba(255,255,255,0.02);
+      --card: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    }
+
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: "Poppins",system-ui,Segoe UI,Roboto,Arial;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(124,58,237,0.08), transparent 10%),
+                  radial-gradient(1000px 500px at 90% 90%, rgba(14,165,233,0.04), transparent 8%),
+                  linear-gradient(180deg, var(--bg-0), var(--bg-1));
+      color: #eaf6ff;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      overflow-x: hidden;
+    }
+
+    /* particle canvas covers background */
+    #particles{ position:fixed; inset:0; z-index:0; pointer-events:none; }
+
+    .wrap{
+      position:relative;
+      z-index:2;
+      max-width:1200px;
+      margin:40px auto;
+      padding:28px;
+    }
+
+    .hero{
+      display:flex;
+      gap:20px;
+      align-items:center;
+      justify-content:space-between;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      padding:28px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,0.04);
+      box-shadow: 0 10px 40px rgba(2,6,23,0.6);
+      backdrop-filter: blur(6px) saturate(120%);
+      position:relative;
+      overflow:visible;
+    }
+
+    /* big neon title */
+    .title-wrap{ position:relative; flex:1; min-width:320px; }
+    .title-main{
+      font-size:48px; line-height:0.95; font-weight:700;
+      letter-spacing: -0.02em;
+      font-family: 'Orbitron', sans-serif;
+      color: #ecfeff;
+      text-shadow:
+        0 0 8px rgba(94,200,255,0.28),
+        0 0 24px rgba(195,123,255,0.10),
+        0 6px 20px rgba(0,0,0,0.6);
+      -webkit-text-stroke: 0.6px rgba(255,255,255,0.02);
+      display:inline-block;
+      transform-origin:center;
+      transition: transform 520ms cubic-bezier(.2,.9,.3,1), opacity 420ms ease;
+    }
+
+    /* sliced effect overlay - we will dim the first title after slice */
+    .title-main.dimmed{
+      opacity:0.08;
+      transform: translateY(-6px) scale(0.99);
+    }
+
+    /* the diagonal slicer line */
+    .slice-line{
+      position:absolute;
+      top:50%;
+      left:-30%;
+      width:140%;
+      height:2px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.95), transparent);
+      transform: rotate(-6deg) translateX(-120%);
+      transform-origin:left;
+      filter:drop-shadow(0 0 8px rgba(255,255,255,0.6));
+      transition: transform 1.2s cubic-bezier(.2,.9,.3,1), opacity 0.6s ease;
+      pointer-events:none;
+    }
+
+    .slice-line.run{
+      transform: rotate(-6deg) translateX(120%);
+    }
+
+    /* second title slides in after slice */
+    .title-sub{
+      font-size:28px; margin-top:8px; color:var(--neon-c1);
+      font-weight:700; display:inline-block; opacity:0; transform: translateX(36px);
+      transition: opacity 520ms ease, transform 520ms cubic-bezier(.2,.9,.3,1);
+      text-shadow: 0 6px 18px rgba(99,102,241,0.08);
+    }
+    .title-sub.show{ opacity:1; transform: translateX(0); }
+
+    .hero-desc{ margin-top:12px; color:rgba(230,245,255,0.72); font-size:14px; max-width:680px; }
+
+    .hero-actions{ display:flex; gap:10px; margin-top:18px; align-items:center; }
+
+    .btn-ghost{
+      padding:10px 14px; border-radius:999px; border:1px solid rgba(255,255,255,0.06);
+      background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      color:var(--neon-c1);
+      font-weight:600; cursor:pointer;
+      display:inline-flex; gap:8px; align-items:center;
+      transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+    .btn-ghost:hover{ transform: translateY(-3px); box-shadow: 0 8px 30px rgba(99,102,241,0.06); }
+
+    /* main layout */
+    .panel{
+      margin-top:22px;
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      gap:20px;
+      align-items:start;
+    }
+
+    /* left buttons list */
+    .video-list{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      padding:14px; border-radius:14px; border:1px solid rgba(255,255,255,0.04);
+    }
+    .video-btn{
+      width:100%; display:flex; align-items:center; justify-content:space-between;
+      gap:10px; padding:14px; border-radius:12px; margin-bottom:10px;
+      cursor:pointer; background:transparent; border:none; color:inherit;
+      transition: transform 180ms ease, box-shadow 180ms ease;
+      position:relative; overflow:hidden;
+    }
+    .video-btn:focus{ outline: none; box-shadow:0 0 0 4px rgba(99,102,241,0.08); }
+
+    .video-btn .meta{ text-align:left; }
+    .video-btn .meta .id{ font-size:12px; opacity:0.85; }
+    .video-btn .meta .title{ font-weight:700; margin-top:6px; font-size:15px; }
+
+    .video-btn .cta{ display:flex; gap:8px; align-items:center; }
+    .video-btn .play{
+      width:36px;height:36px;border-radius:999px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      display:grid; place-items:center;
+      border:1px solid rgba(255,255,255,0.04);
+    }
+
+    /* active neon effect */
+    .video-btn.active{
+      background: linear-gradient(90deg, rgba(124,58,237,0.08), rgba(14,165,233,0.06));
+      box-shadow: 0 10px 30px rgba(124,58,237,0.06);
+      transform: translateY(-6px);
+    }
+    .video-btn .underline{
+      position:absolute; left:0; bottom:0; height:3px;
+      background: linear-gradient(90deg, var(--neon-c2), var(--neon-c1), var(--neon-c3));
+      width:0%; transition: width 420ms cubic-bezier(.2,.9,.3,1);
+    }
+    .video-btn.active .underline{ width:100%; }
+
+    /* right content card */
+    .content-card{
+      padding:18px; border-radius:14px;
+      background: var(--card);
+      border:1px solid rgba(255,255,255,0.02);
+      min-height:320px;
+      box-shadow: 0 12px 40px rgba(2,6,23,0.6);
+      overflow:hidden;
+    }
+
+    .content-head{ display:flex; align-items:center; gap:16px; }
+    .thumb{
+      width:160px; height:90px; border-radius:10px; overflow:hidden; flex-shrink:0;
+      background: linear-gradient(135deg, rgba(124,58,237,0.18), rgba(14,165,233,0.08));
+      display:grid; place-items:center; border:1px solid rgba(255,255,255,0.03);
+    }
+    .thumb svg{ width:42px; height:42px; opacity:0.95; filter: drop-shadow(0 8px 24px rgba(124,58,237,0.12)); }
+
+    .content-title{ font-weight:800; font-size:22px; margin-bottom:6px; font-family: 'Orbitron', sans-serif; color: white; }
+    .content-sub{ color: rgba(255,255,255,0.65); font-size:13px; margin-top:4px; }
+
+    .feature-list{ margin-top:12px; display:grid; gap:8px; }
+    .feature{
+      display:flex; gap:12px; align-items:flex-start;
+      background: rgba(255,255,255,0.01);
+      padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.02);
+    }
+    .dot{ width:10px; height:10px; border-radius:50%; background: linear-gradient(180deg,var(--neon-c1),var(--neon-c2)); flex-shrink:0; margin-top:6px; box-shadow: 0 6px 20px rgba(99,102,241,0.06); }
+    .feature p{ margin:0; color:rgba(255,255,255,0.9); font-size:14px; }
+
+    .actions-row{ margin-top:14px; display:flex; gap:10px; align-items:center; }
+
+    .btn-primary{
+      padding:10px 14px; border-radius:10px; border:none; cursor:pointer;
+      background: linear-gradient(90deg, var(--neon-c2), var(--neon-c1));
+      color:#061018; font-weight:700;
+      box-shadow: 0 8px 30px rgba(124,58,237,0.12);
+      transition: transform 150ms ease;
+    }
+    .btn-primary:hover{ transform: translateY(-3px); }
+
+    .btn-outline{
+      padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.06);
+      background:transparent; color:var(--muted); cursor:pointer;
+    }
+
+    /* modal preview */
+    .modal{
+      position:fixed; inset:0; display:grid; place-items:center; background: rgba(0,0,0,0.6);
+      z-index:40; opacity:0; pointer-events:none; transition: opacity 240ms ease;
+    }
+    .modal.show{ opacity:1; pointer-events:auto; }
+    .modal-card{
+      width:min(960px,94%); background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+      border-radius:14px; padding:18px; border:1px solid rgba(255,255,255,0.04);
+    }
+
+    /* small footer */
+    .foot{
+      margin-top:18px; color:rgba(255,255,255,0.45); font-size:12px; display:flex; justify-content:space-between; gap:12px; align-items:center;
+    }
+
+    /* responsive */
+    @media(max-width:900px){
+      .panel{ grid-template-columns: 1fr; }
+      .thumb{ width:120px; height:72px; }
+      .title-main{ font-size:40px; }
+    }
+
+    @media(max-width:480px){
+      .title-main{ font-size:28px; }
+      .title-sub{ font-size:18px; }
+    }
+
+    /* micro-floating animation for hero bg */
+    .glow-orb{
+      position:absolute; right:-60px; top:-40px; width:220px; height:220px; border-radius:50%;
+      background: radial-gradient(circle at 30% 30%, rgba(195,123,255,0.14), transparent 30%),
+                  radial-gradient(circle at 70% 70%, rgba(94,200,255,0.08), transparent 30%);
+      filter: blur(36px); z-index:0; pointer-events:none;
+      transform: translateZ(0); animation: floaty 6s ease-in-out infinite;
+    }
+    @keyframes floaty{ 0%{ transform: translateY(0) }50%{ transform: translateY(-8px)}100%{transform: translateY(0)} }
+
+    /* small helpful hint styling */
+    .hint{
+      font-size:12px; color:rgba(255,255,255,0.55);
+      margin-left:6px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+
+  <div class="wrap">
+    <div class="hero" role="banner" aria-label="Portfolio hero">
+      <div class="title-wrap">
+        <div class="title-main" id="mainTitle">A ordinary scripter</div>
+        <div class="slice-line" id="sliceLine" aria-hidden="true"></div>
+        <div class="title-sub" id="subTitle">A trustworthy Scripter</div>
+
+        <div class="hero-desc">
+          The ultimate showcase UI — neon polish, cinematic slice animation, sliding buttons, and micro-interactions.
+          Each button below maps to one of your videos and reveals a professional breakdown and demo placeholder.
+        </div>
+
+        <div class="hero-actions">
+          <button class="btn-ghost" id="openRepo">Open repo</button>
+          <button class="btn-ghost" id="downloadIndex">Download HTML</button>
+          <div style="flex:1"></div>
+          <div class="hint">Tip: Click each card to preview the system details.</div>
+        </div>
+      </div>
+
+      <div style="width:420px; position:relative;">
+        <div class="glow-orb" aria-hidden="true"></div>
+
+        <div style="padding:10px; border-radius:12px; background:linear-gradient(180deg, rgba(0,0,0,0.3), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.03)">
+          <div style="font-weight:700; font-size:13px; margin-bottom:8px">Quick gallery</div>
+
+          <div style="display:grid; gap:10px;">
+            <div style="display:flex; gap:10px; align-items:center;">
+              <div style="width:64px;height:42px;border-radius:8px;background:linear-gradient(135deg,#7c3aed22,#0ea5e922);display:grid;place-items:center;border:1px solid rgba(255,255,255,0.03)">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="white" d="M8 5v14l11-7z"/></svg>
+              </div>
+              <div>
+                <div style="font-weight:700">Showcase Preview</div>
+                <div style="font-size:12px;color:rgba(255,255,255,0.65)">Neon intro + buttons</div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px; align-items:center;">
+              <div style="width:64px;height:42px;border-radius:8px;background:linear-gradient(135deg,#05f3ff22,#c37bff22);display:grid;place-items:center;border:1px solid rgba(255,255,255,0.03)">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="white" d="M12 2l4 7H8zM4 13h16v9H4z"/></svg>
+              </div>
+              <div>
+                <div style="font-weight:700">VFX & UI polish</div>
+                <div style="font-size:12px;color:rgba(255,255,255,0.65)">Sliding micro interactions</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- main panel with buttons + content -->
+    <div class="panel" role="main">
+      <div class="video-list" id="videoList" aria-label="Video list">
+        <!-- buttons are generated by JS -->
+      </div>
+
+      <div class="content-card" id="contentCard" aria-live="polite" aria-atomic="true">
+        <!-- content populated by JS -->
+      </div>
+    </div>
+
+    <div class="foot">
+      <div>Made with ❤️ — LUGIA Luminous interface</div>
+      <div style="opacity:0.7">Save as <code>index.html</code> and open in browser</div>
+    </div>
+  </div>
+
+  <!-- modal -->
+  <div class="modal" id="modal">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Preview modal">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+        <div style="font-weight:700">Demo Preview</div>
+        <button id="closeModal" class="btn-outline">Close</button>
+      </div>
+
+      <div style="margin-top:12px; display:grid; gap:12px;">
+        <div style="background:rgba(0,0,0,0.55); padding:12px; border-radius:8px; min-height:220px; display:grid; place-items:center;">
+          <div style="text-align:center; color:rgba(255,255,255,0.65)">
+            This is a visual demo placeholder. Replace with your real video embed (YouTube/Vimeo) or a local video tag.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* -------------------------
+   Data for the six videos
+   ------------------------- */
 const videos = [
   {
-    id: 1,
-    title: "Chat system scripting",
-    subtitle: "First video",
-    features: [
+    id:1, label:"Chat system scripting", subtitle:"First video",
+    features:[
       "Private & group chat scaffolding",
       "Message history + local caching (placeholder store)",
       "Typing indicator & read receipts (UI stubs)",
-      "Command-hooks for moderation & AI-integration",
-    ],
+      "Command-hooks for moderation & AI-integration"
+    ]
   },
   {
-    id: 2,
-    title: "Commands scripting work",
-    subtitle: "Second video",
-    features: [
+    id:2, label:"commands scripting work", subtitle:"Second video",
+    features:[
       "Prefix and slash-like parser",
       "Role/permission checks & cooldowns",
       "Help system & argument parsing stubs",
-      "Command auto-complete UI and confirmations",
-    ],
+      "Command auto-complete UI and confirmations"
+    ]
   },
   {
-    id: 3,
-    title: "NPC scripting",
-    subtitle: "Third video",
-    features: [
+    id:3, label:"npc scripting", subtitle:"Third video",
+    features:[
       "Finite-state AI (patrol / chase / idle)",
       "Dialog systems & choice branches",
       "Pathfinding stubs and interaction triggers",
-      "Animation and VFX hooks for behaviours",
-    ],
+      "Animation and VFX hooks for behaviours"
+    ]
   },
   {
-    id: 4,
-    title: "Hatching system",
-    subtitle: "Fourth video",
-    features: [
+    id:4, label:"hatching system", subtitle:"Fourth video",
+    features:[
       "Egg rarity & probability table",
       "Timed hatch with progress UI",
       "Auto-hatch + accelerate options",
-      "Particle & sound trigger hooks",
-    ],
+      "Particle & sound trigger hooks"
+    ]
   },
   {
-    id: 5,
-    title: "Inventory system",
-    subtitle: "Fifth video",
-    features: [
+    id:5, label:"inventory system", subtitle:"Fifth video",
+    features:[
       "Grid-based inventory layout (slot system)",
       "Stackable items & simple drag-n-drop stubs",
       "Equip / unequip + quick-use buttons",
-      "Persistence-ready data model (save/load)",
-    ],
+      "Persistence-ready data model (save/load)"
+    ]
   },
   {
-    id: 6,
-    title: "GUI scripting (arena game)",
-    subtitle: "Sixth video",
-    features: [
+    id:6, label:"gui scripting (arena game)", subtitle:"Sixth video",
+    features:[
       "Responsive HUD (health / mana / stamina)",
       "Skill buttons with cooldown visuals",
       "Round timer, scoreboard & spectator panel",
-      "Adaptive layouts for mobile & desktop",
-    ],
-  },
+      "Adaptive layouts for mobile & desktop"
+    ]
+  }
 ];
 
-export default function ShowcaseVideos() {
-  const [active, setActive] = useState(videos[0].id);
-  const [showSecondTitle, setShowSecondTitle] = useState(false);
-  const [sliceAnimDone, setSliceAnimDone] = useState(false);
-
-  useEffect(() => {
-    // orchestrate the slice animation -> then slide in second title
-    const t1 = setTimeout(() => setSliceAnimDone(true), 1200); // slice line crosses
-    const t2 = setTimeout(() => setShowSecondTitle(true), 1600); // slide-in second
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, []);
-
-  const activeData = videos.find((v) => v.id === active);
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-800 text-white p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* HERO */}
-        <section className="relative overflow-hidden rounded-2xl p-8 mb-8 bg-gradient-to-b from-black/40 to-white/2 backdrop-blur-md border border-white/6">
-          <div className="absolute inset-0 -z-10 opacity-30" aria-hidden>
-            {/* soft animated nebula background */}
-            <div className="h-full w-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-700/30 via-fuchsia-700/10 to-transparent" />
-          </div>
-
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <div className="flex-1">
-              <div className="relative h-40 flex items-center">
-                {/* First big title (neon) */}
-                <motion.h1
-                  initial={{ opacity: 1, y: 0, scale: 1 }}
-                  animate={{ opacity: sliceAnimDone ? 0.08 : 1, y: sliceAnimDone ? -6 : 0 }}
-                  transition={{ duration: 0.8 }}
-                  className="text-5xl md:text-6xl font-extrabold leading-tight tracking-tight neon-text"
-                  style={{ WebkitTextStroke: '0.3px rgba(255,255,255,0.04)' }}
-                >
-                  A ordinary scripter
-                </motion.h1>
-
-                {/* cutting line */}
-                <motion.div
-                  initial={{ x: '-100%', rotate: -6 }}
-                  animate={{ x: sliceAnimDone ? '120%' : '100%', rotate: -6 }}
-                  transition={{ duration: 1.2, ease: 'easeInOut' }}
-                  onAnimationComplete={() => setSliceAnimDone(true)}
-                  className="pointer-events-none absolute left-0 right-0 mx-auto top-1/2 h-0.5 bg-gradient-to-r from-transparent via-white/80 to-transparent transform-gpu"
-                  style={{ width: '140%' }}
-                />
-
-                {/* second title slides in */}
-                <AnimatePresence>
-                  {showSecondTitle && (
-                    <motion.h2
-                      initial={{ x: 80, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      exit={{ x: 30, opacity: 0 }}
-                      transition={{ duration: 0.6 }}
-                      className="absolute left-0 ml-2 mt-12 text-3xl md:text-4xl font-bold text-emerald-300 drop-shadow-lg"
-                    >
-                      A trustworthy Scripter
-                    </motion.h2>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              <p className="mt-4 max-w-xl text-sm text-white/70">
-                Professional showcase UI for your videos and systems. Click any card to reveal a modern demo panel with descriptions, features, and a visual mock video. Built with Tailwind + Framer Motion — drop into your React/Tailwind project and push to GitHub.
-              </p>
-
-              <div className="mt-6 flex gap-3 items-center">
-                <a
-                  href="#"
-                  className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/20 to-emerald-500/8 border border-emerald-500/20 backdrop-blur text-emerald-200 hover:scale-[1.02] transition-transform"
-                >
-                  <Github className="w-4 h-4 opacity-90" />
-                  <span className="text-sm">Use in GitHub repo</span>
-                </a>
-
-                <button
-                  className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/6 hover:bg-white/8 transition-all"
-                  onClick={() => alert('Copy the component file into your src/ folder and import it into a page.')}
-                >
-                  <Play className="w-4 h-4" />
-                  <span className="text-sm">Preview locally</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Controls - Buttons for each video */}
-            <div className="w-full md:w-96 mt-4 md:mt-0">
-              <div className="grid grid-cols-2 md:grid-cols-1 gap-3">
-                {videos.map((v) => (
-                  <motion.button
-                    key={v.id}
-                    onClick={() => setActive(v.id)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`group relative rounded-xl p-3 text-left border border-white/6 backdrop-blur cursor-pointer transition-all shadow-lg
-                      ${active === v.id ? 'bg-gradient-to-r from-indigo-700/30 to-fuchsia-700/20 ring-1 ring-white/10' : 'bg-black/30'}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-sm text-white/80">{`0${v.id}`}</span>
-                          <h3 className="font-semibold text-sm md:text-base">{v.title}</h3>
-                        </div>
-                        <p className="text-xs text-white/60 mt-1">{v.subtitle}</p>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs px-2 py-1 rounded-full bg-white/6 text-white/80">View</span>
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white/6 to-white/3 flex items-center justify-center">
-                          <Play className="w-4 h-4" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* sliding underline & micro neon */}
-                    <motion.div
-                      className="absolute left-0 bottom-0 h-0.5 bg-gradient-to-r from-emerald-400 via-indigo-400 to-fuchsia-400 rounded-t-full"
-                      layout
-                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                      style={{ width: active === v.id ? '100%' : '0%' }}
-                    />
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CONTENT PANEL */}
-        <main className="grid md:grid-cols-2 gap-6">
-          <AnimatePresence mode="wait">
-            <motion.section
-              key={active}
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 0.45 }}
-              className="rounded-2xl p-6 bg-gradient-to-b from-black/50 to-white/2 border border-white/6 shadow-2xl"
-            >
-              <div className="flex items-start gap-6">
-                <div className="w-2/5 md:w-1/2">
-                  {/* mock video / thumbnail */}
-                  <div className="aspect-video rounded-xl overflow-hidden border border-white/6 relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-800 via-fuchsia-700 to-emerald-600 animate-tilt" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-16 h-16 rounded-full bg-white/6 flex items-center justify-center">
-                        <Play className="w-8 h-8" />
-                      </div>
-                    </div>
-                    <div className="absolute left-3 top-3 text-xs px-2 py-1 rounded-md bg-black/40 backdrop-blur border border-white/6">Demo</div>
-                  </div>
-                </div>
-
-                <div className="flex-1">
-                  <h4 className="font-bold text-xl">{activeData.title}</h4>
-                  <p className="text-sm text-white/70 mt-2">Professional breakdown of what is covered in this video and what I can implement for you.</p>
-
-                  <ul className="mt-4 space-y-2">
-                    {activeData.features.map((f, i) => (
-                      <li key={i} className="text-sm flex items-start gap-3">
-                        <span className="mt-1 w-2 h-2 rounded-full bg-emerald-400/80 shrink-0" />
-                        <span className="text-white/80">{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="mt-6 flex gap-3">
-                    <button
-                      className="px-4 py-2 rounded-md bg-gradient-to-r from-emerald-400/10 to-emerald-400/6 border border-emerald-400/20 hover:scale-[1.02] transition-transform"
-                      onClick={() => alert(`Open the ${activeData.title} dev folder (example)`) }
-                    >
-                      Open demo folder
-                    </button>
-
-                    <button
-                      className="px-4 py-2 rounded-md bg-white/6 hover:bg-white/8 transition"
-                      onClick={() => alert('Copy snippet to clipboard (you can implement further features).')}
-                    >
-                      Copy snippet
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 text-xs text-white/60">
-                <strong>Notes:</strong> This is a visual showcase component with production-grade motion and styling. Replace the mock thumbnail with your real video thumbnails or embed players. The feature lists are starter checklists you can expand when you implement the systems.
-              </div>
-            </motion.section>
-          </AnimatePresence>
-
-          {/* Right side: extras, cards, micro interactions */}
-          <section className="rounded-2xl p-6 bg-gradient-to-b from-black/40 to-white/2 border border-white/6 shadow-lg">
-            <h5 className="font-semibold">Pro UI Extras</h5>
-
-            <div className="mt-4 grid grid-cols-1 gap-4">
-              <div className="rounded-lg p-3 bg-black/20 border border-white/6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm">Polish / Effects</p>
-                    <p className="text-xs text-white/60">Neon glows, slice animation, sliding buttons, hover micro-interactions.</p>
-                  </div>
-                  <div className="text-xs text-white/70">Design</div>
-                </div>
-              </div>
-
-              <div className="rounded-lg p-3 bg-black/20 border border-white/6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm">Integration</p>
-                    <p className="text-xs text-white/60">Drop-in for React app (Tailwind). Hook real systems to the UI components.</p>
-                  </div>
-                  <div className="text-xs text-white/70">Hookups</div>
-                </div>
-              </div>
-
-              <div className="rounded-lg p-3 bg-black/20 border border-white/6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm">Mobile Ready</p>
-                    <p className="text-xs text-white/60">Layouts adapt — use the same components for mobile HUDs and overlays.</p>
-                  </div>
-                  <div className="text-xs text-white/70">Responsive</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 text-xs text-white/60">Tip: To publish this to GitHub, create a new repository and push this component along with a Tailwind-configured React app (Vite or Create-React-App). Add the actual video files or thumbnail images inside /public and update the thumbnail sources.</div>
-          </section>
-        </main>
-
-        <style>{`
-          .neon-text {
-            color: #e9f5ff;
-            text-shadow: 0 0 10px rgba(99,102,241,0.16), 0 0 30px rgba(168,85,247,0.08), 0 2px 12px rgba(99,102,241,0.08);
-          }
-
-          .animate-tilt {
-            animation: tilt 10s linear infinite;
-            opacity: 0.45;
-            mix-blend-mode: screen;
-          }
-
-          @keyframes tilt {
-            0% { transform: translateY(0px) rotate(0deg) scale(1); }
-            50% { transform: translateY(-6px) rotate(1deg) scale(1.02); }
-            100% { transform: translateY(0px) rotate(0deg) scale(1); }
-          }
-
-          /* small responsive tweaks */
-          @media (max-width: 768px) {
-            .neon-text { font-size: 2rem; }
-          }
-        `}</style>
-      </div>
-    </div>
-  );
+/* -------------------------
+   Utility: element creation
+   ------------------------- */
+function el(tag, attrs={}, ...children){
+  const e = document.createElement(tag);
+  for(const k in attrs){
+    if(k==="class") e.className = attrs[k];
+    else if(k==="html") e.innerHTML = attrs[k];
+    else e.setAttribute(k, attrs[k]);
+  }
+  for(const c of children) if(c!=null) e.appendChild(typeof c==='string'?document.createTextNode(c):c);
+  return e;
 }
+
+/* -------------------------
+   Build the buttons list
+   ------------------------- */
+const list = document.getElementById('videoList');
+let activeId = 1;
+function buildButtons(){
+  list.innerHTML = '';
+  videos.forEach(v=>{
+    const btn = el('button',{class:'video-btn', 'aria-pressed': 'false', tabindex:0});
+    const meta = el('div',{class:'meta'});
+    meta.appendChild(el('div',{class:'id'},`0${v.id}`));
+    meta.appendChild(el('div',{class:'title'}, v.label));
+    const cta = el('div',{class:'cta'});
+    cta.appendChild(el('div',{class:'play'}, svgPlay()));
+    cta.appendChild(el('div',{}, el('small',{}, v.subtitle)));
+    btn.appendChild(meta);
+    btn.appendChild(cta);
+    const underline = el('div',{class:'underline'});
+    btn.appendChild(underline);
+
+    btn.addEventListener('click', ()=>{
+      setActive(v.id);
+    });
+    btn.addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); btn.click(); }
+    });
+
+    // mark active
+    if(v.id === activeId) btn.classList.add('active'), btn.setAttribute('aria-pressed','true');
+    list.appendChild(btn);
+  });
+}
+
+/* -------------------------
+   Populate content panel
+   ------------------------- */
+const contentCard = document.getElementById('contentCard');
+
+function renderContent(id){
+  const v = videos.find(x=>x.id===id);
+  contentCard.innerHTML = '';
+  const head = el('div',{class:'content-head'});
+  const thumb = el('div',{class:'thumb'});
+  thumb.innerHTML = svgPlayLarge();
+  const meta = el('div',{});
+  meta.appendChild(el('div',{class:'content-title'}, v.label));
+  meta.appendChild(el('div',{class:'content-sub'}, `${v.subtitle} — professional systems I can implement for you`));
+  head.appendChild(thumb);
+  head.appendChild(meta);
+  contentCard.appendChild(head);
+
+  // features
+  const fl = el('div',{class:'feature-list'});
+  v.features.forEach(f=>{
+    const feat = el('div',{class:'feature'});
+    feat.appendChild(el('div',{class:'dot'}));
+    feat.appendChild(el('p',{}, f));
+    fl.appendChild(feat);
+  });
+  contentCard.appendChild(fl);
+
+  const actions = el('div',{class:'actions-row'});
+  const open = el('button',{class:'btn-primary'}, 'Open demo folder');
+  const copy = el('button',{class:'btn-outline'}, 'Copy snippet');
+  open.addEventListener('click', ()=> alert(`Open the ${v.label} dev folder (local example)`));
+  copy.addEventListener('click', ()=> {
+    const txt = `${v.label}\n\nFeatures:\n- ${v.features.join('\n- ')}`;
+    navigator.clipboard?.writeText(txt).then(()=> alert('Features copied to clipboard'));
+  });
+  actions.appendChild(open); actions.appendChild(copy);
+  contentCard.appendChild(actions);
+}
+
+/* -------------------------
+   set active id & animate
+   ------------------------- */
+function setActive(id){
+  activeId = id;
+  // update button styles
+  const buttons = list.querySelectorAll('.video-btn');
+  buttons.forEach((b,i)=> {
+    const idx = i+1;
+    if(idx === id){ b.classList.add('active'); b.setAttribute('aria-pressed','true'); }
+    else { b.classList.remove('active'); b.setAttribute('aria-pressed','false'); }
+  });
+
+  // content animation: quick fade + slide
+  contentCard.animate([{opacity:0, transform:'translateX(18px)'},{opacity:1, transform:'translateX(0)'}], {duration:360, easing:'cubic-bezier(.2,.9,.3,1)'});
+  renderContent(id);
+}
+
+/* -------------------------
+   initial render
+   ------------------------- */
+buildButtons();
+setActive(1);
+
+/* -------------------------
+   slice animation flow
+   ------------------------- */
+const sliceLine = document.getElementById('sliceLine');
+const mainTitle = document.getElementById('mainTitle');
+const subTitle = document.getElementById('subTitle');
+
+// start slice after small delay
+setTimeout(()=> {
+  sliceLine.classList.add('run');
+  // when run finishes (~1.2s) dim the main title and show the sub
+  sliceLine.addEventListener('transitionend', onSliceEnd, {once:true});
+}, 380);
+
+function onSliceEnd(){
+  mainTitle.classList.add('dimmed');
+  setTimeout(()=> subTitle.classList.add('show'), 220);
+}
+
+/* -------------------------
+   modal preview handlers
+   ------------------------- */
+document.getElementById('openRepo').addEventListener('click', ()=> {
+  // open the repo url the user gave (opening new tab)
+  window.open('https://github.com/rhehei3osjb3/PORTFOLIO_LUGIA-LUMINOUS', '_blank');
+});
+document.getElementById('downloadIndex').addEventListener('click', ()=> {
+  const data = new Blob([document.documentElement.outerHTML], {type:'text/html'});
+  const url = URL.createObjectURL(data);
+  const a = document.createElement('a'); a.href = url; a.download = 'index.html'; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 5000);
+});
+
+const modal = document.getElementById('modal');
+document.getElementById('closeModal').addEventListener('click', ()=> modal.classList.remove('show'));
+
+// if user clicks any thumbnail we open modal (thumbnail is in content area)
+document.addEventListener('click', (ev)=>{
+  if(ev.target.closest('.thumb')) modal.classList.add('show');
+  if(ev.target === modal) modal.classList.remove('show');
+});
+
+/* -------------------------
+   svg helpers
+   ------------------------- */
+function svgPlay(){
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="11" stroke="rgba(255,255,255,0.06)" fill="none"></circle>
+    <path d="M10 8L16 12L10 16V8Z" fill="white"/>
+  </svg>`;
+}
+function svgPlayLarge(){
+  return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="24" height="24" rx="4" fill="rgba(0,0,0,0.18)"></rect>
+    <path d="M9 7L17 12L9 17V7Z" fill="white"></path>
+  </svg>`;
+}
+
+/* -------------------------
+   Particles background (canvas)
+   ------------------------- */
+(function(){
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let w = canvas.width = innerWidth;
+  let h = canvas.height = innerHeight;
+  const particles = [];
+  const count = Math.floor((w*h)/50000) + 20;
+
+  function rand(min,max){ return Math.random()*(max-min)+min; }
+  function init(){
+    particles.length = 0;
+    for(let i=0;i<count;i++){
+      particles.push({
+        x: Math.random()*w,
+        y: Math.random()*h,
+        r: rand(0.6,2.8),
+        vx: rand(-0.2,0.2),
+        vy: rand(-0.15,0.15),
+        hue: rand(160,300),
+        life: rand(60,300),
+        maxLife: rand(120,420)
+      });
+    }
+  }
+
+  function step(){
+    ctx.clearRect(0,0,w,h);
+    for(const p of particles){
+      p.x += p.vx; p.y += p.vy; p.life++;
+      if(p.x < -10) p.x = w+10;
+      if(p.x > w+10) p.x = -10;
+      if(p.y < -10) p.y = h+10;
+      if(p.y > h+10) p.y = -10;
+      const alpha = 0.08 * (1 - (p.life/p.maxLife));
+      ctx.beginPath();
+      const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r*6);
+      gradient.addColorStop(0, `hsla(${p.hue},85%,60%,${alpha})`);
+      gradient.addColorStop(0.6, `hsla(${(p.hue+40)%360},85%,55%,${alpha*0.25})`);
+      gradient.addColorStop(1, `rgba(0,0,0,0)`);
+      ctx.fillStyle = gradient;
+      ctx.arc(p.x, p.y, p.r*6, 0, Math.PI*2);
+      ctx.fill();
+
+      if(p.life > p.maxLife){
+        p.x = Math.random()*w; p.y = Math.random()*h; p.life = 0; p.maxLife = rand(120,420);
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  window.addEventListener('resize', ()=>{
+    w = canvas.width = innerWidth;
+    h = canvas.height = innerHeight;
+    init();
+  });
+
+  init(); step();
+})();
+
+/* -------------------------
+   small: keyboard shortcuts
+   ------------------------- */
+window.addEventListener('keydown', (e)=>{
+  if(e.key === 'ArrowDown'){ activeId = Math.min(6, activeId+1); setActive(activeId); }
+  if(e.key === 'ArrowUp'){ activeId = Math.max(1, activeId-1); setActive(activeId); }
+  if(e.key === 'Escape') modal.classList.remove('show');
+});
+</script>
+</body>
+</html>
